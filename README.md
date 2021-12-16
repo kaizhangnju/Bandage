@@ -2,14 +2,14 @@
 
 ## Table of Contents
 
-* [Intro](https://github.com/rrwick/Bandage#intro)
-* [Help](https://github.com/rrwick/Bandage#help)
-* [Pre-built binaries](https://github.com/rrwick/Bandage#pre-built-binaries)
-* [Building from source](https://github.com/rrwick/Bandage#building-from-source)
-* [Contributing](https://github.com/rrwick/Bandage#contributing)
-* [Citation](https://github.com/rrwick/Bandage#citation)
-* [Credits](https://github.com/rrwick/Bandage#credits)
-* [License](https://github.com/rrwick/Bandage#license)
+* [Intro](https://github.com/kaizhangnju/Bandage#intro)
+* [Help](https://github.com/kaizhangnju/Bandage#help)
+* [Pre-built binaries](https://github.com/kaizhangnju/Bandage#pre-built-binaries)
+* [Building from source](https://github.com/kaizhangnju/Bandage#building-from-source)
+* [Contributing](https://github.com/kaizhangnju/Bandage#contributing)
+* [Citation](https://github.com/kaizhangnju/Bandage#citation)
+* [Credits](https://github.com/kaizhangnju/Bandage#credits)
+* [License](https://github.com/kaizhangnju/Bandage#license)
 
 ## Intro
 
@@ -21,13 +21,13 @@ More information and download links are on the Bandage website: <a href="http://
 
 ## Help
 
-Bandage documentation is available on the <a href="https://github.com/rrwick/Bandage/wiki" target="_blank">Bandage GitHub wiki</a>.
+Bandage documentation is available on the <a href="https://github.com/kaizhangnju/Bandage/wiki" target="_blank">Bandage GitHub wiki</a>.
 
 Bandage help tips are also built into the program. Throughout the UI, you will find these icons next to controls and settings: <img src="http://rrwick.github.io/Bandage/images/helptext.png" alt="help text icon" width="16" height="16">. Click them to see a description of that element of Bandage.
 
 ## Pre-built binaries
 
-Compiled 64-bit binaries for Ubuntu Linux, CentOS, OS X and Windows are available in the GitHub <a href="https://github.com/rrwick/Bandage/releases/" target="_blank">'Releases' section</a> and from the <a href="http://rrwick.github.io/Bandage/" target="_blank">Bandage website</a>.
+Compiled 64-bit binaries for Ubuntu Linux, CentOS, OS X and Windows are available in the GitHub <a href="https://github.com/kaizhangnju/Bandage/releases/" target="_blank">'Releases' section</a> and from the <a href="http://rrwick.github.io/Bandage/" target="_blank">Bandage website</a>.
 
 If you download and run the Mac binary, you may receive a warning stating that Bandage 'can't be opened because it is from an unidentified developer.' Right click on the file and select 'Open' to override this warning.
 
@@ -43,7 +43,7 @@ The following instructions successfully build Bandage on a fresh installation of
 
 1. Ensure the package lists are up-to-date: `sudo apt-get update`
 2. Install prerequisite packages: `sudo apt-get install build-essential git qtbase5-dev libqt5svg5-dev`
-3. Download the Bandage code from GitHub: `git clone https://github.com/rrwick/Bandage.git`
+3. Download the Bandage code from GitHub: `git clone https://github.com/kaizhangnju/Bandage.git`
 4. Open a terminal in the Bandage directory.
 5. Set the environment variable to specify that you will be using Qt 5, not Qt 4: `export QT_SELECT=5`
 6. Run qmake to generate a Makefile: `qmake`
@@ -61,7 +61,7 @@ The following instructions successfully build Bandage on OS X 10.8 and later:
 
 1. Install Xcode, along with the Xcode Command Line Tools. If you can run the `clang` command from the terminal, you should be good to continue.
 2. Install Qt 5. This is most easily done using Homebrew: <a href="http://brew.sh/" target="_blank">brew.sh</a>. Install the Qt 5 package with this command: `brew install qt5`.
-3. Download the Bandage code from GitHub: `git clone https://github.com/rrwick/Bandage.git`
+3. Download the Bandage code from GitHub: `git clone https://github.com/kaizhangnju/Bandage.git`
 4. Open a terminal in the Bandage directory.
 5. Run qmake to generate a Makefile. The location of the `qmake` command may vary, depending on how Qt was installed. If you used Homebrew, it should be here: `/usr/local/opt/qt5/bin/qmake`.
 6. Build the program: `make`
@@ -78,8 +78,8 @@ For Windows and some Linux distributions, the easiest way to build Bandage from 
   * <a href="http://doc.qt.io/qt-5/supported-platforms.html" target="_blank">Look here</a> for more information on Qt supported compilers.
 2. Install the Qt SDK: <a href="http://www.qt.io/download-open-source/" target="_blank">www.qt.io/download-open-source</a>. The disk space required can be reduced by unticking the iOS and Android options in the Qt installer.
 3. Download the Bandage code from GitHub:
-  * Either clone using: `git clone https://github.com/rrwick/Bandage.git`
-  * or download from here: <a href="https://github.com/rrwick/Bandage/archive/master.zip" target="_blank">https://github.com/rrwick/Bandage/archive/master.zip</a>
+  * Either clone using: `git clone https://github.com/kaizhangnju/Bandage.git`
+  * or download from here: <a href="https://github.com/kaizhangnju/Bandage/archive/master.zip" target="_blank">https://github.com/kaizhangnju/Bandage/archive/master.zip</a>
 4. Open the Qt Creator program and load the `Bandage.pro` file which is in the Bandage directory. Since this is the first time the project has been loaded, it will ask you to configure the project. The defaults should be okay, so click 'Configure Project'.
 5. Change to the release build configuration by clicking where it says 'Debug' in the bottom left area of Qt Creator and select 'Release'.
 6. Build and run Bandage by clicking the green arrow in the bottom left area of Qt Creator. Bandage should open when the build has finished.
