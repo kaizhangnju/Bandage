@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>378</width>
+    <width>488</width>
     <height>673</height>
    </rect>
   </property>
@@ -37,10 +37,10 @@
      <widget class="QWidget" name="scrollAreaWidgetContents">
       <property name="geometry">
        <rect>
-        <x>0</x>
-        <y>-62</y>
-        <width>400</width>
-        <height>3466</height>
+        <x>-74</x>
+        <y>-930</y>
+        <width>579</width>
+        <height>4727</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -1118,7 +1118,7 @@ per megabase:</string>
                 <string>On</string>
                </property>
                <property name="checked">
-                <bool>false</bool>
+                <bool>true</bool>
                </property>
               </widget>
              </item>
@@ -1126,9 +1126,6 @@ per megabase:</string>
               <widget class="QRadioButton" name="singleNodeArrowHeadsOffRadioButton">
                <property name="text">
                 <string>Off</string>
-               </property>
-               <property name="checked">
-                <bool>true</bool>
                </property>
               </widget>
              </item>
@@ -1539,7 +1536,7 @@ single node style:</string>
            <widget class="QWidget" name="widget_15" native="true">
             <layout class="QVBoxLayout" name="verticalLayout_2">
              <property name="spacing">
-              <number>-1</number>
+              <number>10</number>
              </property>
              <property name="leftMargin">
               <number>0</number>

@@ -30,8 +30,7 @@ GraphLayoutWorker::GraphLayoutWorker(ogdf::FMMMLayout * fmmm, ogdf::GraphAttribu
 {
 }
 
-
-void GraphLayoutWorker::layoutGraph()
+void GraphLayoutWorker::layoutGraphFMMM()
 {
     m_fmmm->randSeed(clock());
     m_fmmm->useHighLevelOptions(false);

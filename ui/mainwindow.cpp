@@ -67,12 +67,13 @@
 #include "changenodedepthdialog.h"
 #include <limits>
 #include "graphinfodialog.h"
+#include <math.h>
 
 MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     QMainWindow(0),
     ui(new Ui::MainWindow), m_layoutThread(0), m_imageFilter("PNG (*.png)"),
     m_fileToLoadOnStartup(fileToLoadOnStartup), m_drawGraphAfterLoad(drawGraphAfterLoad),
-    m_uiState(NO_GRAPH_LOADED), m_blastSearchDialog(0), m_alreadyShown(false)
+    m_uiState(NO_GRAPH_LOADED), m_blastSearchDialog(0), m_alreadyShown(false), m_algorithmIndex(0)
 {
     ui->setupUi(this);
 
@@ -122,6 +123,8 @@ MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
 
     graphScopeChanged();
     switchColourScheme();
+
+    g_settings->arrowheadsInSingleMode = true;
 
     //If this is a Mac, change the 'Delete' shortcuts to 'Backspace' instead.
 #ifdef Q_OS_MAC
@@ -194,6 +197,8 @@ MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     connect(ui->actionChange_node_name, SIGNAL(triggered(bool)), this, SLOT(changeNodeName()));
     connect(ui->actionChange_node_depth, SIGNAL(triggered(bool)), this, SLOT(changeNodeDepth()));
     connect(ui->moreInfoButton, SIGNAL(clicked(bool)), this, SLOT(openGraphInfoDialog()));
+    connect(ui->dragStrengthSlider, SIGNAL(valueChanged(int)), this, SLOT(changeDragStrength()));
+    connect(ui->tagComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(changeColourByTag()));
 
     connect(this, SIGNAL(windowLoaded()), this, SLOT(afterMainWindowShow()), Qt::ConnectionType(Qt::QueuedConnection | Qt::UniqueConnection));
 }
@@ -447,6 +452,16 @@ void MainWindow::loadGraph2(GraphFileType graphFileType, QString fullFileName)
         // to the default of 'Random colours'.
         if (!customColours && ui->coloursComboBox->currentIndex() == 6)
             ui->coloursComboBox->setCurrentIndex(0);
+
+        disconnect(ui->tagComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(changeColourByTag()));
+        ui->tagComboBox->clear();
+        QMap<QString, std::vector<QString>> tagMap = g_assemblyGraph->m_tags;
+        QMap<QString, std::vector<QString>>::iterator tagIter;
+        for (tagIter = tagMap.begin(); tagIter != tagMap.end(); ++tagIter)
+            ui->tagComboBox->addItem(tagIter.key());
+        connect(ui->tagComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(changeColourByTag()));
+        if (g_settings->nodeColourScheme == TAG_COLOUR)
+            changeColourByTag();
     }
 
     catch (...)
@@ -499,20 +514,23 @@ void MainWindow::selectionChanged()
         QString selectedNodeListText;
         QString selectedNodeLengthText;
         QString selectedNodeDepthText;
+        QString selectedNodeTagsText;
 
-        getSelectedNodeInfo(selectedNodeCount, selectedNodeCountText, selectedNodeListText, selectedNodeLengthText, selectedNodeDepthText);
+        getSelectedNodeInfo(selectedNodeCount, selectedNodeCountText, selectedNodeListText, selectedNodeLengthText, selectedNodeDepthText, selectedNodeTagsText);
 
         if (selectedNodeCount == 1)
         {
             ui->selectedNodesTitleLabel->setText("Selected node");
             ui->selectedNodesLengthLabel->setText("Length: " + selectedNodeLengthText);
             ui->selectedNodesDepthLabel->setText("Depth: " + selectedNodeDepthText);
+            ui->selectedNodeTagsLabel->setText("Tags:\n\r" + selectedNodeTagsText);
         }
         else
         {
             ui->selectedNodesTitleLabel->setText("Selected nodes (" + selectedNodeCountText + ")");
             ui->selectedNodesLengthLabel->setText("Total length: " + selectedNodeLengthText);
             ui->selectedNodesDepthLabel->setText("Mean depth: " + selectedNodeDepthText);
+            ui->selectedNodeTagsLabel->setVisible(false);
         }
 
         ui->selectedNodesTextEdit->setPlainText(selectedNodeListText);
@@ -538,7 +556,7 @@ void MainWindow::selectionChanged()
 }
 
 
-void MainWindow::getSelectedNodeInfo(int & selectedNodeCount, QString & selectedNodeCountText, QString & selectedNodeListText, QString & selectedNodeLengthText, QString & selectedNodeDepthText)
+void MainWindow::getSelectedNodeInfo(int & selectedNodeCount, QString & selectedNodeCountText, QString & selectedNodeListText, QString & selectedNodeLengthText, QString & selectedNodeDepthText, QString & selectedNodeTagsText)
 {
     std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
 
@@ -564,6 +582,15 @@ void MainWindow::getSelectedNodeInfo(int & selectedNodeCount, QString & selected
 
     selectedNodeLengthText = formatIntForDisplay(totalLength) + " bp";
     selectedNodeDepthText = formatDepthForDisplay(g_assemblyGraph->getMeanDepth(selectedNodes));
+
+    if (selectedNodeCount == 1){
+        QString nodeName = selectedNodes[0]->getName();
+        std::vector<QString> nodeTags = selectedNodes[0]->getTagName();
+        std::vector<QString>::iterator tagIter;
+        for (tagIter=nodeTags.begin(); tagIter!=nodeTags.end(); ++tagIter){
+            selectedNodeTagsText += "\t" + *tagIter + " (" + selectedNodes[0]->getTagType(*tagIter) + "):\t" + selectedNodes[0]->getTagValue(*tagIter) + "\n\r";
+        }
+    }
 }
 
 
@@ -735,7 +762,8 @@ void MainWindow::drawGraph()
 
     resetScene();
     g_assemblyGraph->buildOgdfGraphFromNodesAndEdges(startingNodes, g_settings->nodeDistance);
-    layoutGraph();
+
+    layoutGraphFMMM();
 }
 
 
@@ -790,7 +818,7 @@ std::vector<DeBruijnNode *> MainWindow::getNodesFromLineEdit(QLineEdit * lineEdi
 
 
 
-void MainWindow::layoutGraph()
+void MainWindow::layoutGraphFMMM()
 {
     //The actual layout is done in a different thread so the UI will stay responsive.
     MyProgressDialog * progress = new MyProgressDialog(this, "Laying out graph...", true, "Cancel layout", "Cancelling layout...",
@@ -819,7 +847,7 @@ void MainWindow::layoutGraph()
     graphLayoutWorker->moveToThread(m_layoutThread);
 
     connect(progress, SIGNAL(halt()), this, SLOT(graphLayoutCancelled()));
-    connect(m_layoutThread, SIGNAL(started()), graphLayoutWorker, SLOT(layoutGraph()));
+    connect(m_layoutThread, SIGNAL(started()), graphLayoutWorker, SLOT(layoutGraphFMMM()));
     connect(graphLayoutWorker, SIGNAL(finishedLayout()), m_layoutThread, SLOT(quit()));
     connect(graphLayoutWorker, SIGNAL(finishedLayout()), graphLayoutWorker, SLOT(deleteLater()));
     connect(graphLayoutWorker, SIGNAL(finishedLayout()), this, SLOT(graphLayoutFinished()));
@@ -1055,36 +1083,58 @@ void MainWindow::switchColourScheme()
         g_settings->nodeColourScheme = RANDOM_COLOURS;
         ui->contiguityButton->setVisible(false);
         ui->contiguityInfoText->setVisible(false);
+        ui->tagComboBox->setVisible(false);
+        ui->tagInfoText->setVisible(false);
         break;
     case 1:
         g_settings->nodeColourScheme = UNIFORM_COLOURS;
         ui->contiguityButton->setVisible(false);
         ui->contiguityInfoText->setVisible(false);
+        ui->tagComboBox->setVisible(false);
+        ui->tagInfoText->setVisible(false);
         break;
     case 2:
         g_settings->nodeColourScheme = DEPTH_COLOUR;
         ui->contiguityButton->setVisible(false);
         ui->contiguityInfoText->setVisible(false);
+        ui->tagComboBox->setVisible(false);
+        ui->tagInfoText->setVisible(false);
         break;
     case 3:
         g_settings->nodeColourScheme = BLAST_HITS_SOLID_COLOUR;
         ui->contiguityButton->setVisible(false);
         ui->contiguityInfoText->setVisible(false);
+        ui->tagComboBox->setVisible(false);
+        ui->tagInfoText->setVisible(false);
         break;
     case 4:
         g_settings->nodeColourScheme = BLAST_HITS_RAINBOW_COLOUR;
         ui->contiguityButton->setVisible(false);
         ui->contiguityInfoText->setVisible(false);
+        ui->tagComboBox->setVisible(false);
+        ui->tagInfoText->setVisible(false);
         break;
     case 5:
         g_settings->nodeColourScheme = CONTIGUITY_COLOUR;
         ui->contiguityButton->setVisible(true);
         ui->contiguityInfoText->setVisible(true);
+        ui->tagComboBox->setVisible(false);
+        ui->tagInfoText->setVisible(false);
         break;
     case 6:
         g_settings->nodeColourScheme = CUSTOM_COLOURS;
         ui->contiguityButton->setVisible(false);
         ui->contiguityInfoText->setVisible(false);
+        ui->tagComboBox->setVisible(false);
+        ui->tagInfoText->setVisible(false);
+        break;
+    case 7:
+        g_settings->nodeColourScheme = TAG_COLOUR;
+        ui->contiguityButton->setVisible(false);
+        ui->contiguityInfoText->setVisible(false);
+        ui->tagComboBox->setVisible(true);
+        ui->tagInfoText->setVisible(true);
+        changeColourByTag();
         break;
     }
 
@@ -1710,7 +1760,9 @@ void MainWindow::setInfoTexts()
                                         "on their contiguity with the selected node(s).</li>"
                                         "<li>'Custom colours': Nodes will be coloured using colours of your "
                                         "choice. Select one or more nodes and then click the 'Set colour' button "
-                                        "to define their colour.</li></ul>"
+                                        "to define their colour.</li>"
+                                        "<li>'Colour by tag': Nodes will be coloured according to the selected tag. Segments "
+                                        "with the selected tag will be coloured the same.</li></ul>"
                                         "See the 'Colours' section of the Bandage " + settingsDialogTitle + " "
                                         "to control various colouring options.");
     ui->contiguityInfoText->setInfoText("Select one or more nodes and then click this button. Bandage will "
@@ -1754,6 +1806,8 @@ void MainWindow::setInfoTexts()
                                           "depth less than this value will not be drawn.");
     ui->maxDepthInfoText->setInfoText("This is the uper bound for the depth range. Nodes with a read "
                                           "depth greater than this value will not be drawn.");
+    ui->sensitivityInfoText->setInfoText("This adjusts the deformation sensitivity of the segment when dragging the node.");
+    ui->tagInfoText->setInfoText("Choose the tag here. Bandage will choose a random colour for each tag value");
 }
 
 
@@ -2084,6 +2138,7 @@ void MainWindow::setNodeColourSchemeComboBox(NodeColourScheme nodeColourScheme)
     case BLAST_HITS_RAINBOW_COLOUR: ui->coloursComboBox->setCurrentIndex(4); break;
     case CONTIGUITY_COLOUR: ui->coloursComboBox->setCurrentIndex(5); break;
     case CUSTOM_COLOURS: ui->coloursComboBox->setCurrentIndex(6); break;
+    case TAG_COLOUR: ui->coloursComboBox->setCurrentIndex(7); break;
     }
 }
 
@@ -2161,6 +2216,7 @@ void MainWindow::setSelectedNodesWidgetsVisibility(bool visible)
     ui->selectedNodesModificationWidget->setVisible(visible);
     ui->selectedNodesLengthLabel->setVisible(visible);
     ui->selectedNodesDepthLabel->setVisible(visible);
+    ui->selectedNodeTagsLabel->setVisible(visible);
     ui->selectedNodesSpacerWidget->setVisible(visible);
 }
 
@@ -2499,4 +2555,36 @@ void MainWindow::openGraphInfoDialog()
 {
     GraphInfoDialog graphInfoDialog(this);
     graphInfoDialog.exec();
+}
+
+
+
+void MainWindow::changeDragStrength()
+{
+    g_settings->dragStrength = 1000 * exp(-(ui->dragStrengthSlider->value())/20.0);
+}
+
+
+
+void MainWindow::changeColourByTag()
+{
+    QString currentTag = ui->tagComboBox->currentText();
+    g_settings->tagSelected = currentTag;
+    std::vector<QString> tagValues = g_assemblyGraph->m_tags[currentTag];
+    std::vector<QString>::iterator valueIter;
+
+    for (valueIter=tagValues.begin(); valueIter!=tagValues.end(); ++valueIter)
+    {
+        int hue = rand() % 360;
+        QColor valueColour;
+        valueColour.setHsl(hue,
+                           g_settings->randomColourPositiveSaturation,
+                           g_settings->randomColourPositiveLightness);
+        valueColour.setAlpha(g_settings->randomColourPositiveOpacity);
+
+        g_settings->tagColour.insert(*valueIter, valueColour);
+    }
+
+    g_assemblyGraph->resetAllNodeColours();
+    g_graphicsView->viewport()->update();
 }

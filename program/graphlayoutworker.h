@@ -21,7 +21,9 @@
 
 #include <QObject>
 #include "../ogdf/energybased/FMMMLayout.h"
+#include "../ogdf/cluster/ClusterGraph.h"
 #include "../ogdf/basic/GraphAttributes.h"
+#include "../graph/assemblygraph.h"
 
 
 class GraphLayoutWorker : public QObject
@@ -42,7 +44,7 @@ public:
     double m_aspectRatio;
 
 public slots:
-    void layoutGraph();
+    void layoutGraphFMMM();
 
 signals:
     void finishedLayout();

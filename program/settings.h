@@ -95,7 +95,7 @@ public:
     FloatSetting outlineThickness;
     double selectionThickness;
     double arrowheadSize;
-    double arrowheadsInSingleMode;
+    bool arrowheadsInSingleMode;
     FloatSetting textOutlineThickness;
 
     int blastRainbowPartsPerQuery;
@@ -202,6 +202,9 @@ public:
     //These are used for the 'Depth range' graph scope.
     FloatSetting minDepthRange;
     FloatSetting maxDepthRange;
+
+    QString tagSelected;
+    QMap<QString, QColor> tagColour;
 };
 
 #endif // SETTINGS_H

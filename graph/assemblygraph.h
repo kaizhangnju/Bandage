@@ -51,6 +51,7 @@ public:
     QMap<QPair<DeBruijnNode*, DeBruijnNode*>, DeBruijnEdge*> m_deBruijnGraphEdges;
 
     ogdf::Graph * m_ogdfGraph;
+    ogdf::NodeArray<int> * m_nodeArray;
     ogdf::EdgeArray<double> * m_edgeArray;
     ogdf::GraphAttributes * m_graphAttributes;
 
@@ -69,6 +70,7 @@ public:
     QString m_filename;
     QString m_depthTag;
     SequencesLoadedFromFasta m_sequencesLoadedFromFasta;
+    QMap<QString, std::vector<QString>> m_tags;
 
     void cleanUp();
     void createDeBruijnEdge(QString node1Name, QString node2Name,
@@ -167,6 +169,7 @@ public:
     bool attemptToLoadSequencesFromFasta();
     long long getTotalLengthOrphanedNodes() const;
     bool useLinearLayout() const;
+    bool hasTag(QString tagName) {return m_tags.find(tagName) != m_tags.end();}
 
 
 private:

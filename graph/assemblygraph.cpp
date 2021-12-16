@@ -50,6 +50,7 @@ AssemblyGraph::AssemblyGraph() :
     m_sequencesLoadedFromFasta(NOT_READY)
 {
     m_ogdfGraph = new ogdf::Graph();
+    m_nodeArray = new ogdf::NodeArray<int>(*m_ogdfGraph);
     m_edgeArray = new ogdf::EdgeArray<double>(*m_ogdfGraph);
     m_graphAttributes = new ogdf::GraphAttributes(*m_ogdfGraph, ogdf::GraphAttributes::nodeGraphics |
                                                   ogdf::GraphAttributes::edgeGraphics);
@@ -59,6 +60,7 @@ AssemblyGraph::AssemblyGraph() :
 AssemblyGraph::~AssemblyGraph()
 {
     delete m_graphAttributes;
+    delete m_nodeArray;
     delete m_edgeArray;
     delete m_ogdfGraph;
 }
@@ -83,6 +85,8 @@ void AssemblyGraph::cleanUp()
     m_deBruijnGraphEdges.clear();
 
     m_contiguitySearchDone = false;
+
+    m_tags.clear();
 
     clearGraphInfo();
 }
@@ -164,6 +168,7 @@ void AssemblyGraph::clearOgdfGraphAndResetNodes()
     }
 
     m_ogdfGraph->clear();
+    m_nodeArray->init(*m_ogdfGraph);
     m_edgeArray->init(*m_ogdfGraph);
 }
 
@@ -582,6 +587,8 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(QString fullFileName, bool *unsupp
 
         QTextStream in(&inputFile);
         while (!in.atEnd()) {
+            QMap<QString, QString> tagAndValue;
+            QMap<QString, QString> tagAndType;
             QApplication::processEvents();
             QString line = in.readLine();
 
@@ -633,6 +640,7 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(QString fullFileName, bool *unsupp
                     if (part.at(2) != ':')
                         continue;
                     QString tag = part.left(2).toUpper();
+                    QString type = part.mid(3, 1);
                     QString valString = part.right(part.length() - 5);
                     if (tag == "KC") {
                         kcFound = true;
@@ -660,6 +668,21 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(QString fullFileName, bool *unsupp
                         l2 = valString;
                     if (tag == "C2")
                         c2 = QColor(valString);
+                    if (tagAndValue.find(tag) == tagAndValue.end()
+                        && tag != "KC" && tag != "RC" && tag != "FC"
+                        && tag != "DP" && tag != "LN" && tag != "LB"
+                        && tag != "CL" && tag != "L2" && tag != "C2")
+                    {
+                        tagAndType.insert(tag, type);
+                        tagAndValue.insert(tag, valString);
+                        if (!hasTag(tag)) {
+                            m_tags.insert(tag, std::vector<QString>());
+                            m_tags[tag].push_back(valString);
+                        } else {
+                            if (std::find(m_tags[tag].begin(), m_tags[tag].end(), valString) == m_tags[tag].end())
+                                m_tags[tag].push_back(valString);
+                        }
+                    }
                 }
 
                 //GFA can use * to indicate that the sequence is not in the
@@ -736,6 +759,8 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(QString fullFileName, bool *unsupp
                 }
 
                 DeBruijnNode * node = new DeBruijnNode(nodeName, nodeDepth, sequence, length);
+                node->setTagAndType(tagAndType);
+                node->setTagAndValue(tagAndValue);
                 m_deBruijnGraphNodes.insert(nodeName, node);
             }
 
@@ -2249,7 +2274,7 @@ void AssemblyGraph::layoutGraph()
                                                                   g_settings->graphLayoutQuality,
                                                                   useLinearLayout(),
                                                                   g_settings->componentSeparation);
-    graphLayoutWorker->layoutGraph();
+    graphLayoutWorker->layoutGraphFMMM();
 }
 
 

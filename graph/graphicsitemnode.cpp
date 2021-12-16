@@ -374,6 +374,13 @@ void GraphicsItemNode::setNodeColour()
         break;
     }
 
+    case TAG_COLOUR:
+    {
+        QString value = m_deBruijnNode->getTagValue(g_settings->tagSelected);
+        m_colour = g_settings->tagColour[value];
+        break;
+    }
+
     default: //CONTIGUITY COLOUR
     {
         //For single nodes, display the colour of whichever of the
@@ -464,7 +471,24 @@ QPainterPath GraphicsItemNode::shape() const
     subtractionPath.lineTo(getLast() - frontVector + additionalForwardBit);
     subtractionPath.lineTo(arrow2);
     subtractionPath.lineTo(getLast());
-    return mainNodePath.subtracted(subtractionPath);
+    QPainterPath mainNodePathTmp = mainNodePath.subtracted(subtractionPath);
+
+    QLineF backline = QLineF(getFirst(), getSecond()).normalVector();
+    backline.setLength(m_width / 2.0);
+    QPointF backVector = backline.p2() - backline.p1();
+    QLineF arrowbackLine(getSecond(), getFirst());
+    arrowbackLine.setLength(m_width / 2.0);
+    QPointF arrowbackVector = arrowbackLine.p2() - arrowbackLine.p1();
+    QPainterPath addedPath;
+    addedPath.moveTo(getFirst());
+    addedPath.lineTo(getFirst() + backVector + arrowbackVector);
+    addedPath.lineTo(getFirst() + backVector);
+    addedPath.lineTo(getFirst() - backVector);
+    addedPath.lineTo(getFirst() - backVector + arrowbackVector);
+    addedPath.lineTo(getFirst());
+    mainNodePathTmp.addPath(addedPath);
+
+    return mainNodePathTmp;
 }
 
 

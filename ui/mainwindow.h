@@ -62,17 +62,18 @@ private:
     UiState m_uiState;
     BlastSearchDialog * m_blastSearchDialog;
     bool m_alreadyShown;
+    int m_algorithmIndex;
 
     void cleanUp();
     void displayGraphDetails();
     void clearGraphDetails();
     void resetScene();
-    void layoutGraph();
+    void layoutGraphFMMM();
     void addGraphicsItemsToScene();
     void zoomToFitRect(QRectF rect);
     void zoomToFitScene();
     void setZoomSpinBoxStep();
-    void getSelectedNodeInfo(int & selectedNodeCount, QString & selectedNodeCountText, QString & selectedNodeListText, QString & selectedNodeLengthText, QString &selectedNodeDepthText);
+    void getSelectedNodeInfo(int & selectedNodeCount, QString & selectedNodeCountText, QString & selectedNodeListText, QString & selectedNodeLengthText, QString &selectedNodeDepthText, QString & selectedNodeTagsText);
     QString getSelectedEdgeListText();
     std::vector<DeBruijnNode *> getNodesFromLineEdit(QLineEdit * lineEdit, bool exactMatch, std::vector<QString> * nodesNotInGraph = 0);
     void setSceneRectangle();
@@ -159,6 +160,8 @@ private slots:
     void changeNodeName();
     void changeNodeDepth();
     void openGraphInfoDialog();
+    void changeDragStrength();
+    void changeColourByTag();
 
 protected:
       void showEvent(QShowEvent *ev);

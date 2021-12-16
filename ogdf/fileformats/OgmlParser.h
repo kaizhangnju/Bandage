@@ -63,7 +63,7 @@
 #include "../cluster/ClusterGraphAttributes.h"
 
 // constraints
-//o#include <ogdf/Constraints.h>
+//o#include "../ogdf/Constraints.h"
 
 
 namespace ogdf {
