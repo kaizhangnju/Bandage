@@ -70,7 +70,6 @@ public:
     QString m_filename;
     QString m_depthTag;
     SequencesLoadedFromFasta m_sequencesLoadedFromFasta;
-    QMap<QString, std::vector<QString>> m_tags;
 
     void cleanUp();
     void createDeBruijnEdge(QString node1Name, QString node2Name,
@@ -169,7 +168,6 @@ public:
     bool attemptToLoadSequencesFromFasta();
     long long getTotalLengthOrphanedNodes() const;
     bool useLinearLayout() const;
-    bool hasTag(QString tagName) {return m_tags.find(tagName) != m_tags.end();}
 
 
 private:

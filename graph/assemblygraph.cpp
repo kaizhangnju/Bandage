@@ -86,8 +86,6 @@ void AssemblyGraph::cleanUp()
 
     m_contiguitySearchDone = false;
 
-    m_tags.clear();
-
     clearGraphInfo();
 }
 
@@ -587,8 +585,6 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(QString fullFileName, bool *unsupp
 
         QTextStream in(&inputFile);
         while (!in.atEnd()) {
-            QMap<QString, QString> tagAndValue;
-            QMap<QString, QString> tagAndType;
             QApplication::processEvents();
             QString line = in.readLine();
 
@@ -629,9 +625,10 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(QString fullFileName, bool *unsupp
 
                 //Get the tags.
                 bool kcFound = false, rcFound = false, fcFound = false, dpFound = false;
+                bool snFound = false, soFound = false, srFound = false;
                 double kc = 0.0, rc = 0.0, fc = 0.0, dp = 0.0;
-                int ln = 0;
-                QString lb, l2;
+                int ln = 0, so = 0, sr = 0;
+                QString lb, l2, sn;
                 QColor cl, c2;
                 for (int i = 3; i < lineParts.size(); ++i) {
                     QString part = lineParts.at(i);
@@ -640,7 +637,6 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(QString fullFileName, bool *unsupp
                     if (part.at(2) != ':')
                         continue;
                     QString tag = part.left(2).toUpper();
-                    QString type = part.mid(3, 1);
                     QString valString = part.right(part.length() - 5);
                     if (tag == "KC") {
                         kcFound = true;
@@ -668,20 +664,17 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(QString fullFileName, bool *unsupp
                         l2 = valString;
                     if (tag == "C2")
                         c2 = QColor(valString);
-                    if (tagAndValue.find(tag) == tagAndValue.end()
-                        && tag != "KC" && tag != "RC" && tag != "FC"
-                        && tag != "DP" && tag != "LN" && tag != "LB"
-                        && tag != "CL" && tag != "L2" && tag != "C2")
-                    {
-                        tagAndType.insert(tag, type);
-                        tagAndValue.insert(tag, valString);
-                        if (!hasTag(tag)) {
-                            m_tags.insert(tag, std::vector<QString>());
-                            m_tags[tag].push_back(valString);
-                        } else {
-                            if (std::find(m_tags[tag].begin(), m_tags[tag].end(), valString) == m_tags[tag].end())
-                                m_tags[tag].push_back(valString);
-                        }
+                    if (tag == "SN") {
+                        snFound = true;
+                        sn = valString;
+                    }
+                    if (tag == "SO") {
+                        soFound = true;
+                        so = valString.toInt();
+                    }
+                    if (tag == "SR") {
+                        srFound = true;
+                        sr = valString.toInt();
                     }
                 }
 
@@ -759,8 +752,12 @@ void AssemblyGraph::buildDeBruijnGraphFromGfa(QString fullFileName, bool *unsupp
                 }
 
                 DeBruijnNode * node = new DeBruijnNode(nodeName, nodeDepth, sequence, length);
-                node->setTagAndType(tagAndType);
-                node->setTagAndValue(tagAndValue);
+                if (snFound)
+                    node->setSNTag(sn);
+                if (soFound)
+                    node->setSOValue(so);
+                if (srFound)
+                    node->setSRValue(sr);
                 m_deBruijnGraphNodes.insert(nodeName, node);
             }
 

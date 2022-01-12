@@ -838,13 +838,3 @@ QColor DeBruijnNode::getCustomColourForDisplay() const
         return m_reverseComplement->getCustomColour();
     return g_settings->defaultCustomNodeColour;
 }
-
-
-std::vector<QString> DeBruijnNode::getTagName()
-{
-    std::vector<QString> tagName;
-    QMap<QString, QString>::iterator tagIter;
-    for (tagIter = m_tagAndValue.begin(); tagIter != m_tagAndValue.end(); ++tagIter)
-        tagName.push_back(tagIter.key());
-    return tagName;
-}
