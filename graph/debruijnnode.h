@@ -98,6 +98,9 @@ public:
     int getDeadEndCount() const;
     int getNumberOfOgdfGraphEdges(double drawnNodeLength) const;
     double getDrawnNodeLength() const;
+    std::vector<QString> getTagName();
+    QString getTagValue(QString tagName) const {return m_tagAndValue[tagName];}
+    QString getTagType(QString tagName) const {return m_tagAndType[tagName];}
 
     //MODIFERS
     void setDepthRelativeToMeanDrawnDepth(double newVal) {m_depthRelativeToMeanDrawnDepth = newVal;}
@@ -126,16 +129,8 @@ public:
     void clearCsvData() {m_csvData.clear();}
     void setDepth(double newDepth) {m_depth = newDepth;}
     void setName(QString newName) {m_name = newName;}
-
-    void setSNTag(QString SNTag) {m_SNTag = SNTag; m_hasSNTag = true;}
-    void setSOValue(int SOValue) {m_SOValue = SOValue; m_hasSOValue = true;}
-    void setSRValue(int SRValue) {m_SRValue = SRValue; m_hasSRValue = true;}
-    QString getSNTag() {return m_SNTag;}
-    int getSOValue() {return m_SOValue;}
-    int getSRValue() {return m_SRValue;}
-    bool hasSNTag() {return m_hasSNTag;}
-    bool hasSOValue() {return m_hasSOValue;}
-    bool hasSRValue() {return m_hasSRValue;}
+    void setTagAndType(QMap<QString, QString> tagAndType) {m_tagAndType = tagAndType;}
+    void setTagAndValue(QMap<QString, QString> tagAndValue) {m_tagAndValue = tagAndValue;}
 
 private:
     QString m_name;
@@ -157,12 +152,8 @@ private:
     QStringList m_csvData;
     QString getNodeNameForFasta(bool sign) const;
     QByteArray getUpstreamSequence(int upstreamSequenceLength) const;
-    QString m_SNTag;
-    int m_SOValue;
-    int m_SRValue;
-    bool m_hasSNTag = false;
-    bool m_hasSOValue = false;
-    bool m_hasSRValue = false;
+    QMap<QString, QString> m_tagAndType;
+    QMap<QString, QString> m_tagAndValue;
 
     double getNodeLengthPerMegabase() const;
     bool isOnlyPathInItsDirection(DeBruijnNode * connectedNode,

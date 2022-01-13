@@ -376,10 +376,8 @@ void GraphicsItemNode::setNodeColour()
 
     case TAG_COLOUR:
     {
-        if (m_deBruijnNode->hasSNTag()) {
-            if (m_deBruijnNode->getSNTag() == g_settings->SNTagSelected)
-                m_colour = g_settings->SNTagColour;
-        }
+        QString value = m_deBruijnNode->getTagValue(g_settings->tagSelected);
+        m_colour = g_settings->tagColour[value];
         break;
     }
 

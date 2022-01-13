@@ -198,8 +198,8 @@ MainWindow::MainWindow(QString fileToLoadOnStartup, bool drawGraphAfterLoad) :
     connect(ui->actionChange_node_depth, SIGNAL(triggered(bool)), this, SLOT(changeNodeDepth()));
     connect(ui->moreInfoButton, SIGNAL(clicked(bool)), this, SLOT(openGraphInfoDialog()));
     connect(ui->dragStrengthSlider, SIGNAL(valueChanged(int)), this, SLOT(changeDragStrength()));
-    connect(ui->SNTagInput, SIGNAL(returnPressed()), this, SLOT(changeColourBySNTag()));
-    connect(ui->SNColourButton, SIGNAL(colourChosen(QColor)), this, SLOT(changeColourBySNTag()));
+    connect(ui->tagComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(changeColourByTag()));
+    connect(ui->resetColourButton, SIGNAL(clicked()), this, SLOT(changeColourByTag()));
 
     connect(this, SIGNAL(windowLoaded()), this, SLOT(afterMainWindowShow()), Qt::ConnectionType(Qt::QueuedConnection | Qt::UniqueConnection));
 }
@@ -453,6 +453,16 @@ void MainWindow::loadGraph2(GraphFileType graphFileType, QString fullFileName)
         // to the default of 'Random colours'.
         if (!customColours && ui->coloursComboBox->currentIndex() == 6)
             ui->coloursComboBox->setCurrentIndex(0);
+
+        disconnect(ui->tagComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(changeColourByTag()));
+        ui->tagComboBox->clear();
+        QMap<QString, std::vector<QString>> tagMap = g_assemblyGraph->m_tags;
+        QMap<QString, std::vector<QString>>::iterator tagIter;
+        for (tagIter = tagMap.begin(); tagIter != tagMap.end(); ++tagIter)
+            ui->tagComboBox->addItem(tagIter.key());
+        connect(ui->tagComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(changeColourByTag()));
+        if (g_settings->nodeColourScheme == TAG_COLOUR)
+            changeColourByTag();
     }
 
     catch (...)
@@ -505,20 +515,23 @@ void MainWindow::selectionChanged()
         QString selectedNodeListText;
         QString selectedNodeLengthText;
         QString selectedNodeDepthText;
+        QString selectedNodeTagsText;
 
-        getSelectedNodeInfo(selectedNodeCount, selectedNodeCountText, selectedNodeListText, selectedNodeLengthText, selectedNodeDepthText);
+        getSelectedNodeInfo(selectedNodeCount, selectedNodeCountText, selectedNodeListText, selectedNodeLengthText, selectedNodeDepthText, selectedNodeTagsText);
 
         if (selectedNodeCount == 1)
         {
             ui->selectedNodesTitleLabel->setText("Selected node");
             ui->selectedNodesLengthLabel->setText("Length: " + selectedNodeLengthText);
             ui->selectedNodesDepthLabel->setText("Depth: " + selectedNodeDepthText);
+            ui->selectedNodeTagsLabel->setText("Tag(s) info:\n\r" + selectedNodeTagsText);
         }
         else
         {
             ui->selectedNodesTitleLabel->setText("Selected nodes (" + selectedNodeCountText + ")");
             ui->selectedNodesLengthLabel->setText("Total length: " + selectedNodeLengthText);
             ui->selectedNodesDepthLabel->setText("Mean depth: " + selectedNodeDepthText);
+            ui->selectedNodeTagsLabel->setVisible(false);
         }
 
         ui->selectedNodesTextEdit->setPlainText(selectedNodeListText);
@@ -544,7 +557,7 @@ void MainWindow::selectionChanged()
 }
 
 
-void MainWindow::getSelectedNodeInfo(int & selectedNodeCount, QString & selectedNodeCountText, QString & selectedNodeListText, QString & selectedNodeLengthText, QString & selectedNodeDepthText)
+void MainWindow::getSelectedNodeInfo(int & selectedNodeCount, QString & selectedNodeCountText, QString & selectedNodeListText, QString & selectedNodeLengthText, QString & selectedNodeDepthText, QString & selectedNodeTagsText)
 {
     std::vector<DeBruijnNode *> selectedNodes = m_scene->getSelectedNodes();
 
@@ -570,6 +583,15 @@ void MainWindow::getSelectedNodeInfo(int & selectedNodeCount, QString & selected
 
     selectedNodeLengthText = formatIntForDisplay(totalLength) + " bp";
     selectedNodeDepthText = formatDepthForDisplay(g_assemblyGraph->getMeanDepth(selectedNodes));
+
+    if (selectedNodeCount == 1){
+        QString nodeName = selectedNodes[0]->getName();
+        std::vector<QString> nodeTags = selectedNodes[0]->getTagName();
+        std::vector<QString>::iterator tagIter;
+        for (tagIter=nodeTags.begin(); tagIter!=nodeTags.end(); ++tagIter){
+            selectedNodeTagsText += "\t" + *tagIter + " (" + selectedNodes[0]->getTagType(*tagIter) + "):\t" + selectedNodes[0]->getTagValue(*tagIter) + "\n\r";
+        }
+    }
 }
 
 
@@ -1062,67 +1084,67 @@ void MainWindow::switchColourScheme()
         g_settings->nodeColourScheme = RANDOM_COLOURS;
         ui->contiguityButton->setVisible(false);
         ui->contiguityInfoText->setVisible(false);
-        ui->SNTagInfoText->setVisible(false);
-        ui->SNTagInput->setVisible(false);
-        ui->SNColourButton->setVisible(false);
+        ui->tagComboBox->setVisible(false);
+        ui->tagInfoText->setVisible(false);
+        ui->resetColourButton->setVisible(false);
         break;
     case 1:
         g_settings->nodeColourScheme = UNIFORM_COLOURS;
         ui->contiguityButton->setVisible(false);
         ui->contiguityInfoText->setVisible(false);
-        ui->SNTagInfoText->setVisible(false);
-        ui->SNTagInput->setVisible(false);
-        ui->SNColourButton->setVisible(false);
+        ui->tagComboBox->setVisible(false);
+        ui->tagInfoText->setVisible(false);
+        ui->resetColourButton->setVisible(false);
         break;
     case 2:
         g_settings->nodeColourScheme = DEPTH_COLOUR;
         ui->contiguityButton->setVisible(false);
         ui->contiguityInfoText->setVisible(false);
-        ui->SNTagInfoText->setVisible(false);
-        ui->SNTagInput->setVisible(false);
-        ui->SNColourButton->setVisible(false);
+        ui->tagComboBox->setVisible(false);
+        ui->tagInfoText->setVisible(false);
+        ui->resetColourButton->setVisible(false);
         break;
     case 3:
         g_settings->nodeColourScheme = BLAST_HITS_SOLID_COLOUR;
         ui->contiguityButton->setVisible(false);
         ui->contiguityInfoText->setVisible(false);
-        ui->SNTagInfoText->setVisible(false);
-        ui->SNTagInput->setVisible(false);
-        ui->SNColourButton->setVisible(false);
+        ui->tagComboBox->setVisible(false);
+        ui->tagInfoText->setVisible(false);
+        ui->resetColourButton->setVisible(false);
         break;
     case 4:
         g_settings->nodeColourScheme = BLAST_HITS_RAINBOW_COLOUR;
         ui->contiguityButton->setVisible(false);
         ui->contiguityInfoText->setVisible(false);
-        ui->SNTagInfoText->setVisible(false);
-        ui->SNTagInput->setVisible(false);
-        ui->SNColourButton->setVisible(false);
+        ui->tagComboBox->setVisible(false);
+        ui->tagInfoText->setVisible(false);
+        ui->resetColourButton->setVisible(false);
         break;
     case 5:
         g_settings->nodeColourScheme = CONTIGUITY_COLOUR;
         ui->contiguityButton->setVisible(true);
         ui->contiguityInfoText->setVisible(true);
-        ui->SNTagInfoText->setVisible(false);
-        ui->SNTagInput->setVisible(false);
-        ui->SNColourButton->setVisible(false);
+        ui->tagComboBox->setVisible(false);
+        ui->tagInfoText->setVisible(false);
+        ui->resetColourButton->setVisible(false);
         break;
     case 6:
         g_settings->nodeColourScheme = CUSTOM_COLOURS;
         ui->contiguityButton->setVisible(false);
         ui->contiguityInfoText->setVisible(false);
-        ui->SNTagInfoText->setVisible(false);
-        ui->SNTagInput->setVisible(false);
-        ui->SNColourButton->setVisible(false);
+        ui->tagComboBox->setVisible(false);
+        ui->tagInfoText->setVisible(false);
+        ui->resetColourButton->setVisible(false);
         break;
     case 7:
         g_settings->nodeColourScheme = TAG_COLOUR;
         ui->contiguityButton->setVisible(false);
         ui->contiguityInfoText->setVisible(false);
-        ui->SNTagInfoText->setVisible(true);
-        ui->SNTagInput->setVisible(true);
-        ui->SNColourButton->setVisible(true);
-        ui->SNColourButton->setColour(Qt::blue);
-        return;
+        ui->tagComboBox->setVisible(true);
+        ui->tagInfoText->setVisible(true);
+        ui->resetColourButton->setVisible(true);
+        changeColourByTag();
+        break;
     }
 
     g_assemblyGraph->resetAllNodeColours();
@@ -1748,8 +1770,8 @@ void MainWindow::setInfoTexts()
                                         "<li>'Custom colours': Nodes will be coloured using colours of your "
                                         "choice. Select one or more nodes and then click the 'Set colour' button "
                                         "to define their colour.</li>"
-                                        "<li>'Colour by tag': Nodes will be coloured according to the SN tag. Segments with the "
-                                        "selected SN tag will be coloured the same.</li></ul>"
+                                        "<li>'Colour by tag': Nodes will be coloured according to the selected tag. Segments "
+                                        "with the selected tag will be coloured the same.</li></ul>"
                                         "See the 'Colours' section of the Bandage " + settingsDialogTitle + " "
                                         "to control various colouring options.");
     ui->contiguityInfoText->setInfoText("Select one or more nodes and then click this button. Bandage will "
@@ -1794,12 +1816,7 @@ void MainWindow::setInfoTexts()
     ui->maxDepthInfoText->setInfoText("This is the uper bound for the depth range. Nodes with a read "
                                           "depth greater than this value will not be drawn.");
     ui->sensitivityInfoText->setInfoText("This adjusts the deformation sensitivity of the segment when dragging the node.");
-    ui->SNTagInfoText->setInfoText("Select colour with the "
-                                   "colour button on the right. "
-                                   "Enter the selected SN tag "
-                                   "with the line edit box on the "
-                                   "left. Press enter to colour "
-                                   "the selected segments.");
+    ui->tagInfoText->setInfoText("Choose the tag here. Bandage will choose a random colour for each tag value");
 }
 
 
@@ -2208,6 +2225,7 @@ void MainWindow::setSelectedNodesWidgetsVisibility(bool visible)
     ui->selectedNodesModificationWidget->setVisible(visible);
     ui->selectedNodesLengthLabel->setVisible(visible);
     ui->selectedNodesDepthLabel->setVisible(visible);
+    ui->selectedNodeTagsLabel->setVisible(visible);
     ui->selectedNodesSpacerWidget->setVisible(visible);
 }
 
@@ -2557,10 +2575,24 @@ void MainWindow::changeDragStrength()
 
 
 
-void MainWindow::changeColourBySNTag()
+void MainWindow::changeColourByTag()
 {
-    g_settings->SNTagSelected = ui->SNTagInput->text();
-    g_settings->SNTagColour = ui->SNColourButton->m_colour;
+    QString currentTag = ui->tagComboBox->currentText();
+    g_settings->tagSelected = currentTag;
+    std::vector<QString> tagValues = g_assemblyGraph->m_tags[currentTag];
+    std::vector<QString>::iterator valueIter;
+
+    for (valueIter=tagValues.begin(); valueIter!=tagValues.end(); ++valueIter)
+    {
+        int hue = rand() % 360;
+        QColor valueColour;
+        valueColour.setHsl(hue,
+                           g_settings->randomColourPositiveSaturation,
+                           g_settings->randomColourPositiveLightness);
+        valueColour.setAlpha(g_settings->randomColourPositiveOpacity);
+
+        g_settings->tagColour.insert(*valueIter, valueColour);
+    }
 
     g_assemblyGraph->resetAllNodeColours();
     g_graphicsView->viewport()->update();

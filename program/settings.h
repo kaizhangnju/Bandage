@@ -203,8 +203,8 @@ public:
     FloatSetting minDepthRange;
     FloatSetting maxDepthRange;
 
-    QString SNTagSelected;
-    QColor SNTagColour;
+    QString tagSelected;
+    QMap<QString, QColor> tagColour;
 };
 
 #endif // SETTINGS_H
