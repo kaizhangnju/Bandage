@@ -589,7 +589,19 @@ void MainWindow::getSelectedNodeInfo(int & selectedNodeCount, QString & selected
         std::vector<QString> nodeTags = selectedNodes[0]->getTagName();
         std::vector<QString>::iterator tagIter;
         for (tagIter=nodeTags.begin(); tagIter!=nodeTags.end(); ++tagIter){
-            selectedNodeTagsText += "\t" + *tagIter + " (" + selectedNodes[0]->getTagType(*tagIter) + "):\t" + selectedNodes[0]->getTagValue(*tagIter) + "\n\r";
+            QString tagValue = selectedNodes[0]->getTagValue(*tagIter);
+            int tagValueLength = tagValue.length();
+            int lengthCount = 0;
+            int pieceCount = 0;
+            for (int i = 0; i < tagValueLength; ++i) {
+                lengthCount++;
+                if (lengthCount == 16) {
+                    lengthCount = 0;
+                    tagValue = tagValue.left(i + 4 * pieceCount) + "\n\r\t\t" + tagValue.right(tagValueLength - i);
+                    pieceCount++;
+                }
+            }
+            selectedNodeTagsText += "\t" + *tagIter + " (" + selectedNodes[0]->getTagType(*tagIter) + "):\t" + tagValue + "\n\r";
         }
     }
 }
